@@ -1,0 +1,72 @@
+1) Software Installation
+    Install Python 3.12
+
+    mac book
+
+    > python3 --version
+    > python3 -m pip --version
+
+    ----------------------------------
+
+    Install Node.js and npm
+
+    ----------------------------------
+
+    VSCode with AutoSave
+
+    ----------------------------------
+
+    VSCode Extensions
+
+    ----------------------------------
+
+    Install Git
+
+    ----------------------------------
+
+    Create Repository
+
+    https://github.com/toolsknowledge/vpro-agent-platform.git
+
+    -----------------------------------
+
+    Docker Desktop
+
+    -----------------------------------
+
+    Install AWS CLI
+
+    -----------------------------------
+
+    Aws Account 
+
+    -----------------------------------
+
+    Install Postman
+
+    -----------------------------------
+
+    Verification (MAC Book)
+    ***********************
+    python3 --version
+    python3 -m pip --version
+    node --version
+    npm --version
+    git --version
+    docker --version
+    docker compose version
+    aws --version
+    code --version
+
+
+Windows
+*******
+python --version
+python -m pip --version
+node --version
+npm --version
+git --version
+docker --version
+docker compose version
+aws --version
+code --version
