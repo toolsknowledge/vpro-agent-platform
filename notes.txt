@@ -122,3 +122,15 @@ new terminal
 
 9) vpro-skill-agent
         docker-compose.yml
+
+
+10) test the docker
+
+        > vpro-skill-agent
+        > docker compose up -d
+        > docker ps
+        > docker exec -it vpro-postgres psql -U vpro_user -d vpro_agent_db
+        > SELECT current_database();
+        > SELECT current_user;
+
+
