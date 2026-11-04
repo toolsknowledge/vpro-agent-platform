@@ -118,3 +118,7 @@ new terminal
    npm run dev (start frontend)
    backend also must be in running state
    http://localhost:5173
+
+
+9) vpro-skill-agent
+        docker-compose.yml
