@@ -133,4 +133,9 @@ new terminal
         > SELECT current_database();
         > SELECT current_user;
 
+        ----------------------
+        docker compose down
+        docker compose up -d
+        docker ps
+
 
