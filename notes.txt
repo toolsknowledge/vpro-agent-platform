@@ -100,3 +100,9 @@ new terminal
          app 
             main.py
 
+
+6) start server
+    > cd backend
+    python -m uvicorn app.main:app --reload
+
+    http://127.0.0.1:8000/docs
