@@ -70,3 +70,33 @@ docker --version
 docker compose version
 aws --version
 code --version
+
+
+Day - 2
+*******
+1) npm create vite@latest frontend -- --template react
+
+
+new terminal
+2) > vpro-skill-agent
+   > mkdir backend
+   > cd backend
+   > mkdir app
+
+
+3) create requirements.txt
+    backend
+        requirements.txt
+
+ 
+4) cd backend
+   python3 -m venv venv
+   source venv/bin/activate (mac)
+   venv\Scripts\activate (Windows)
+   python -m pip install -r requirements.txt
+
+5) create main.py
+    backend
+         app 
+            main.py
+
