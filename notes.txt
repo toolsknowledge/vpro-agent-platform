@@ -112,3 +112,9 @@ new terminal
         frontend/src/index.css
 
         vpro-skill-agent/.gitignore
+
+
+8) cd frontend
+   npm run dev (start frontend)
+   backend also must be in running state
+   http://localhost:5173
