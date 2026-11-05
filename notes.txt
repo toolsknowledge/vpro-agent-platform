@@ -162,3 +162,15 @@ create requirements.txt
     > cd backend
     > source venv/bin/activate
     > python -m pip install -r requirements.txt
+
+    python -m pip show sqlalchemy
+    python -m pip show psycopg
+    python -m pip show python-dotenv
+-------------------------------
+
+create .env file
+    backend
+        .env
+
+
+DATABASE_URL=postgresql+psycopg://vpro_user:vpro_password@localhost:5433/vpro_agent_db
