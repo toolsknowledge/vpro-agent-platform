@@ -211,3 +211,22 @@ modify
             App.jsx
             index.css
 
+Execute
+*******
+Terminal - 1
+docker compose down
+docker compose up -d
+docker ps
+
+
+Terminal - 2
+cd backend
+python -m uvicorn app.main:app --reload
+
+
+Terminal-3
+cd frontend
+npm run dev
+
+http://localhost:5173
+
