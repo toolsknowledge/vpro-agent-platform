@@ -132,10 +132,15 @@ new terminal
         > docker exec -it vpro-postgres psql -U vpro_user -d vpro_agent_db
         > SELECT current_database();
         > SELECT current_user;
+        > \l
+        > \q
 
         ----------------------
         docker compose down
         docker compose up -d
         docker ps
+
+Day - 3
+*******
 
 
