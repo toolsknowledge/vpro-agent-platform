@@ -10,32 +10,79 @@ body {
 }
 
 .container {
-  text-align: center;
-  padding: 60px 20px;
+  max-width: 1000px;
+  margin: auto;
+  padding: 40px 20px;
 }
 
 h1 {
   color: #173f75;
-  font-size: 36px;
+  text-align: center;
 }
 
-.status-card {
+.container > p {
+  text-align: center;
+  color: #64748b;
+}
+
+.upload-card,
+.documents-card {
   background: white;
-  max-width: 500px;
-  margin: 40px auto;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  padding: 25px;
+  margin-top: 25px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
 }
 
-.success {
-  color: green;
+h2 {
+  color: #173f75;
 }
 
-.error {
-  color: red;
+input {
+  display: block;
+  margin: 20px 0;
+  max-width: 100%;
+}
+
+button {
+  background: #173f75;
+  color: white;
+  padding: 12px 22px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.message {
+  margin-top: 20px;
+  color: #15803d;
+  overflow-wrap: anywhere;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  overflow-wrap: anywhere;
+}
+
+th {
+  background: #f1f5f9;
 }
 
 .footer {
+  margin-top: 30px;
+  text-align: center;
   color: #64748b;
 }
