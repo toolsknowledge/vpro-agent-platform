@@ -194,3 +194,11 @@ docker exec -it vpro-postgres psql -U vpro_user -d vpro_agent_db
 \dt
 \d documents
 \q
+
+--------------------------------------------
+modify 
+    backend
+        requirements.txt (replace old libraries with latest libraries)
+
+        > python -m pip install -r requirements.txt
+
