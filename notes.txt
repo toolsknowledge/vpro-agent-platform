@@ -174,3 +174,23 @@ create .env file
 
 
 DATABASE_URL=postgresql+psycopg://vpro_user:vpro_password@localhost:5433/vpro_agent_db
+
+----------------------------------
+
+create database.py
+backend
+    app
+        database.py (db conf)
+        models.py (table info)
+        main.py (replace old code with latest code) (connect db to fastapi)
+
+docker ps
+python -m uvicorn app.main:app --reload
+http://127.0.0.1:8000/api/db-health
+http://127.0.0.1:8000/api/vector-health
+http://127.0.0.1:8000/api/documents/table-health
+
+docker exec -it vpro-postgres psql -U vpro_user -d vpro_agent_db
+\dt
+\d documents
+\q
