@@ -142,5 +142,13 @@ new terminal
 
 Day - 3
 *******
+enable pgvector extension
+> docker exec -it vpro-postgres psql -U vpro_user -d vpro_agent_db
 
+> CREATE EXTENSION IF NOT EXISTS vector;
 
+SELECT extname, extversion
+FROM pg_extension
+WHERE extname = 'vector';
+
+\q
