@@ -200,5 +200,8 @@ modify
     backend
         requirements.txt (replace old libraries with latest libraries)
 
+        app
+            main.py (replace old endpoints with latest end poins)
+
         > python -m pip install -r requirements.txt
 
