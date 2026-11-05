@@ -230,3 +230,15 @@ npm run dev
 
 http://localhost:5173
 
+
+Testing
+create python_notes.txt (Root Folder)
+
+docker exec -it vpro-postgres psql -U vpro_user -d vpro_agent_db
+
+SELECT * FROM documents;
+
+SELECT filename, content
+FROM documents;
+
+\q
