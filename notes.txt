@@ -249,3 +249,19 @@ Day-4
 
 backend
     requirements.txt (replace old code with latest code)
+
+
+---------------------------
+enable aws bedrock services (pdf file)
+---------------------------
+
+----------------------------------
+aws configure via terminal
+
+> aws configure
+AWS Access Key ID: YOUR_ACCESS_KEY
+AWS Secret Access Key: YOUR_SECRET_KEY
+Default region name: us-east-1
+Default output format: json 
+aws sts get-caller-identity
+------------------------------------------
