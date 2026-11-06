@@ -242,3 +242,10 @@ SELECT filename, content
 FROM documents;
 
 \q
+
+
+Day-4
+*****
+
+backend
+    requirements.txt (replace old code with latest code)
