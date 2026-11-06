@@ -265,3 +265,19 @@ Default region name: us-east-1
 Default output format: json 
 aws sts get-caller-identity
 ------------------------------------------
+
+
+----------------------------------------
+backend
+    .env
+    app
+        embedding_service.py
+        models.py
+        main.py
+
+frontend
+        src
+            App.jsx
+            index.css
+
+
