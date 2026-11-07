@@ -394,3 +394,67 @@ Terminal-3
 **********
 cd frontend
 npm run dev
+
+
+------------------------------------
+1) aws sts get-caller-identity
+
+2) update .env file
+    backend/.env
+
+3) update backend/requirements.txt
+    > cd backend
+    > source venv/bin/activate
+    > python -m pip install -r requirements.txt
+
+4) create backend/app/rag_service.py
+
+5) models backend/app/main.py
+
+6) cd backend
+source venv/bin/activate
+python -m uvicorn app.main:app --reload
+
+
+7) create testing file
+    backend/test_bedrock.py
+
+
+8) Confirm AWS account.
+Select user vpro-agentic-ai-user.
+Open Permissions.
+Select Add permissions.
+Select Create inline policy.
+Select the JSON tab.
+
+
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowNova2LiteInference",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:us-east-1:xxxxxxxx:inference-profile/us.amazon.nova-2-lite-v1:0",
+        "arn:aws:bedrock:*::foundation-model/amazon.nova-2-lite-v1:0"
+      ]
+    }
+  ]
+}
+
+Policy name: VPROBedrockNova2LiteAccess
+Create policy.
+
+IAM → Users → vpro-agentic-ai-user → Permissions.
+
+
+python test_bedrock.py
+
+BEDROCK CONNECTION SUCCESSFUL
+
+MODEL RESPONSE:
+
+Python is a programming language...

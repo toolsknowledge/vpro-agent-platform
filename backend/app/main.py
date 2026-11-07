@@ -3,6 +3,7 @@ import hashlib
 from contextlib import asynccontextmanager
 from io import BytesIO
 from pydantic import BaseModel, Field
+from app.rag_service import generate_rag_answer
 
 from fastapi import (
     FastAPI,
@@ -38,7 +39,11 @@ class SearchRequest(BaseModel):
         min_length=1,
         max_length=2000
     )
-
+class RAGRequest(BaseModel):
+    question: str = Field(
+        min_length=1,
+        max_length=2000
+    )
 
 
 # --------------------------------------------------
@@ -668,4 +673,108 @@ def semantic_search(
         "query": query_text,
         "total_results": len(search_results),
         "results": search_results
+    }
+
+# --------------------------------------------------
+# RAG Question Answering
+# --------------------------------------------------
+
+@app.post("/api/rag/ask")
+def ask_rag_question(
+    request: RAGRequest,
+    db: Session = Depends(get_db)
+):
+
+    question = request.question.strip()
+
+    if not question:
+        raise HTTPException(
+            status_code=400,
+            detail="Question cannot be empty"
+        )
+
+    # Step 1: Generate question embedding
+    try:
+        query_embedding = generate_embedding(question)
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=502,
+            detail="Unable to generate question embedding"
+        ) from error
+
+    # Step 2: Retrieve the top 3 relevant chunks
+    distance = models.DocumentChunk.embedding.cosine_distance(
+        query_embedding
+    )
+
+    try:
+        results = (
+            db.query(
+                models.DocumentChunk,
+                models.Document.filename,
+                distance.label("distance")
+            )
+            .join(
+                models.Document,
+                models.Document.id == models.DocumentChunk.document_id
+            )
+            .order_by(distance.asc())
+            .limit(3)
+            .all()
+        )
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to retrieve document context"
+        ) from error
+
+    if not results:
+        raise HTTPException(
+            status_code=404,
+            detail="No processed document chunks found. Generate embeddings first."
+        )
+
+    # Step 3: Prepare retrieved context
+    retrieved_chunks = []
+
+    for chunk, filename, cosine_distance in results:
+
+        retrieved_chunks.append({
+            "filename": filename,
+            "document_id": chunk.document_id,
+            "chunk_number": chunk.chunk_number,
+            "content": chunk.content,
+            "cosine_distance": round(float(cosine_distance), 4)
+        })
+
+    # Step 4: Generate answer using LangChain and Bedrock
+    try:
+        answer = generate_rag_answer(
+            question,
+            retrieved_chunks
+        )
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=502,
+            detail="Unable to generate answer using Amazon Bedrock. Check model access and IAM permissions."
+        ) from error
+
+    # Step 5: Return answer and source information
+    return {
+        "status": "success",
+        "question": question,
+        "answer": answer,
+        "total_sources": len(retrieved_chunks),
+        "sources": [
+            {
+                "document_id": chunk["document_id"],
+                "filename": chunk["filename"],
+                "chunk_number": chunk["chunk_number"],
+                "cosine_distance": chunk["cosine_distance"]
+            }
+            for chunk in retrieved_chunks
+        ]
     }

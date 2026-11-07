@@ -9,3 +9,4 @@ python-docx
 langchain-text-splitters
 boto3
 pgvector
+langchain-aws
