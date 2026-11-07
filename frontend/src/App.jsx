@@ -57,9 +57,17 @@ function App() {
         throw new Error(data.detail || "Upload failed");
       }
 
+      
+
+      if (data.status === "already_exists") {
       setMessage(
-        `${data.filename} uploaded successfully. ${data.characters_extracted} characters extracted.`
+        `${data.filename} already exists. No duplicate record was created. ${data.characters_extracted} characters checked.`
       );
+      } else {
+        setMessage(
+          `${data.filename} uploaded successfully. ${data.characters_extracted} characters extracted.`
+        );
+      }
 
       setFile(null);
       document.getElementById("documentFile").value = "";
