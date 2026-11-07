@@ -356,3 +356,41 @@ EMBEDDING_DIMENSIONS=1024
     FROM pg_indexes
     WHERE tablename = 'documents'
     AND indexname = 'ix_documents_content_hash';
+
+
+----------------------------
+add the below functionality
+
+ask the question....functionality
+
+backend
+    app 
+        main.py (replace with updated code)
+
+frontend
+    src
+        App.jsx
+        index.css
+
+Terminal-1
+**********
+docker compose down
+docker compose up -d
+docker ps
+
+Terminal-2
+**********
+cd backend
+source venv/bin/activate
+python -m uvicorn app.main:app --reload
+
+http://127.0.0.1:8000/docs
+/api/search
+{
+  "query": "What is Python?"
+}
+
+Terminal-3
+**********
+cd frontend
+npm run dev
