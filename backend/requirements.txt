@@ -11,3 +11,4 @@ boto3
 pgvector
 langchain-aws
 langgraph
+langchain-core

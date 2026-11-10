@@ -29,6 +29,7 @@ from app.database import engine, Base, get_db
 from app import models
 from app.embedding_service import generate_embedding
 from app.agent_graph import run_rag_agent
+from app.agentic_tools import run_tool_agent
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
@@ -50,6 +51,11 @@ class RAGRequest(BaseModel):
 class ChatRequest(BaseModel):
     session_id: int
     question: str = Field(min_length=1, max_length=2000)
+
+
+class AgentRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=2000)
+    session_id: int | None = None
 
 
 # --------------------------------------------------
@@ -984,4 +990,61 @@ def chat_with_memory(
                 "content": assistant_message.content
             }
         ]
+    }
+
+
+# --------------------------------------------------
+# Lesson 9: Agentic AI tool calling
+# --------------------------------------------------
+
+@app.post("/api/agent/ask")
+def ask_agent(request: AgentRequest, db: Session = Depends(get_db)):
+    """Run the tool-calling agent with optional conversation history."""
+    question = request.question.strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Question cannot be empty")
+
+    history = []
+    session = None
+    if request.session_id is not None:
+        session = db.get(models.ChatSession, request.session_id)
+        if session is None:
+            raise HTTPException(status_code=404, detail="Chat session not found")
+        previous = (
+            db.query(models.ChatMessage)
+            .filter(models.ChatMessage.session_id == session.id)
+            .order_by(models.ChatMessage.id.desc())
+            .limit(10)
+            .all()
+        )
+        previous.reverse()
+        history = [{"role": item.role, "content": item.content} for item in previous]
+
+    try:
+        result = run_tool_agent(question=question, history=history, db=db)
+    except Exception as error:
+        raise HTTPException(
+            status_code=502,
+            detail="Tool-calling agent failed. Check the backend terminal for the detailed error and verify Bedrock tool-use access."
+        ) from error
+
+    if session is not None:
+        try:
+            db.add_all([
+                models.ChatMessage(session_id=session.id, role="user", content=question),
+                models.ChatMessage(session_id=session.id, role="assistant", content=result["answer"]),
+            ])
+            if session.title == "New Conversation":
+                session.title = question[:100]
+            db.commit()
+        except Exception as error:
+            db.rollback()
+            raise HTTPException(status_code=500, detail="Agent answered, but chat history could not be saved.") from error
+
+    return {
+        "status": "success",
+        "question": question,
+        "answer": result["answer"],
+        "tool_calls": result["tool_calls"],
+        "tools_available": ["calculator", "search_knowledge_base"],
     }
