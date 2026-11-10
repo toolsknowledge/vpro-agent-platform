@@ -16,6 +16,13 @@ function App() {
   const [searching, setSearching] = useState(false);
   const [searchMessage, setSearchMessage] = useState("");
 
+  const [chatSessions, setChatSessions] = useState([]);
+  const [activeSessionId, setActiveSessionId] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatQuestion, setChatQuestion] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [creatingSession, setCreatingSession] = useState(false);
+
   async function loadDocuments() {
     try {
       const response = await fetch(`${API_URL}/api/documents`);
@@ -34,6 +41,7 @@ function App() {
 
   useEffect(() => {
     loadDocuments();
+    loadChatSessions();
   }, []);
 
   async function uploadDocument() {
@@ -167,6 +175,142 @@ function App() {
       setSearching(false);
     }
   }
+
+  async function loadChatSessions() {
+    try {
+      const response = await fetch(`${API_URL}/api/chat/sessions`);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Unable to load chat sessions");
+      }
+
+      const data = await response.json();
+      setChatSessions(Array.isArray(data) ? data : []);
+    } catch (error) {
+      setSearchMessage(error.message);
+      setChatSessions([]);
+    }
+  }
+
+async function createChatSession() {
+  if (creatingSession) return;
+
+  setCreatingSession(true);
+  setSearchMessage("");
+
+  try {
+    const response = await fetch(`${API_URL}/api/chat/sessions`, {
+      method: "POST"
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.detail || "Unable to create chat session");
+    }
+
+    // The FastAPI endpoint returns the primary key as "id".
+    if (!Number.isInteger(data.id)) {
+      throw new Error("The server did not return a valid chat session ID.");
+    }
+
+    setActiveSessionId(data.id);
+    setChatMessages([]);
+    await loadChatSessions();
+  } catch (error) {
+    setSearchMessage(error.message);
+  } finally {
+    setCreatingSession(false);
+  }
+}
+
+async function openChatSession(sessionId) {
+  const validSessionId = Number(sessionId);
+
+  if (!Number.isInteger(validSessionId) || validSessionId <= 0) {
+    setSearchMessage("Invalid conversation ID. Please create a new conversation.");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `${API_URL}/api/chat/sessions/${validSessionId}/messages`
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.detail || "Unable to load conversation");
+    }
+
+    setActiveSessionId(validSessionId);
+    setChatMessages(Array.isArray(data) ? data : []);
+    setSearchMessage("");
+  } catch (error) {
+    setSearchMessage(error.message);
+  }
+}
+
+async function sendChatMessage() {
+  if (!chatQuestion.trim() || !Number.isInteger(Number(activeSessionId)) || Number(activeSessionId) <= 0) {
+    return;
+  }
+
+  const question = chatQuestion.trim();
+
+  setChatQuestion("");
+  setChatLoading(true);
+
+  setChatMessages((previous) => [
+    ...previous,
+    {
+      role: "user",
+      content: question
+    }
+  ]);
+
+  try {
+    const response = await fetch(`${API_URL}/api/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        session_id: Number(activeSessionId),
+        question
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || "Chat request failed");
+    }
+
+    setChatMessages((previous) => [
+      ...previous,
+      {
+        role: "assistant",
+        content: data.answer
+      }
+    ]);
+
+    await loadChatSessions();
+
+  } catch (error) {
+    setChatMessages((previous) => [
+      ...previous,
+      {
+        role: "assistant",
+        content: `Error: ${error.message}`
+      }
+    ]);
+
+  } finally {
+    setChatLoading(false);
+  }
+}
 
   return (
     <div className="container">
@@ -320,6 +464,94 @@ function App() {
       <footer className="footer">
         React + FastAPI + LangChain + Amazon Bedrock + PostgreSQL + pgvector
       </footer>
+
+      {/* Conversation Memory and Chat History */}
+
+<section className="card conversation-card">
+
+  <h2>AI Conversational Assistant</h2>
+
+  <div className="chat-layout">
+
+    <aside className="chat-sidebar">
+
+      <button onClick={createChatSession} disabled={creatingSession}>
+        {creatingSession ? "Creating..." : "+ New Conversation"}
+      </button>
+
+      <h3>Chat History</h3>
+
+      {chatSessions.map((session) => (
+        <button
+          key={session.id}
+          className={
+            activeSessionId === session.id
+              ? "session-button active"
+              : "session-button"
+          }
+          onClick={() => openChatSession(session.id)}
+        >
+          {session.title}
+        </button>
+      ))}
+
+    </aside>
+
+    <div className="chat-window">
+
+      <div className="chat-messages">
+
+        {chatMessages.length === 0 && (
+          <p className="chat-empty">
+            Start a new conversation and ask a question.
+          </p>
+        )}
+
+        {chatMessages.map((message, index) => (
+          <div
+            key={message.id || `pending-${index}`}
+            className={`chat-message ${message.role}`}
+          >
+            <strong>
+              {message.role === "user" ? "You" : "AI Assistant"}
+            </strong>
+
+            <p>{message.content}</p>
+          </div>
+        ))}
+
+        {chatLoading && (
+          <p className="chat-loading">
+            AI Assistant is thinking...
+          </p>
+        )}
+
+      </div>
+
+      <div className="chat-input-area">
+
+        <textarea
+          value={chatQuestion}
+          onChange={(e) => setChatQuestion(e.target.value)}
+          placeholder="Ask a question or follow-up..."
+          rows={2}
+          disabled={!activeSessionId || chatLoading}
+        />
+
+        <button
+          onClick={sendChatMessage}
+          disabled={!activeSessionId || chatLoading || !chatQuestion.trim()}
+        >
+          {chatLoading ? "Sending..." : "Send"}
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
 
     </div>
   );

@@ -5,6 +5,7 @@ from io import BytesIO
 from pydantic import BaseModel, Field
 from app.rag_service import generate_rag_answer
 
+
 from fastapi import (
     FastAPI,
     Depends,
@@ -28,7 +29,6 @@ from app.database import engine, Base, get_db
 from app import models
 from app.embedding_service import generate_embedding
 
-
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt"}
@@ -44,6 +44,11 @@ class RAGRequest(BaseModel):
         min_length=1,
         max_length=2000
     )
+
+
+class ChatRequest(BaseModel):
+    session_id: int
+    question: str = Field(min_length=1, max_length=2000)
 
 
 # --------------------------------------------------
@@ -776,5 +781,250 @@ def ask_rag_question(
                 "cosine_distance": chunk["cosine_distance"]
             }
             for chunk in retrieved_chunks
+        ]
+    }
+
+
+# --------------------------------------------------
+# Lesson 7: Conversation memory and chat history
+# --------------------------------------------------
+
+@app.post("/api/chat/sessions")
+def create_chat_session(db: Session = Depends(get_db)):
+    """Create a new conversation session."""
+    session = models.ChatSession(title="New Conversation")
+
+    try:
+        db.add(session)
+        db.commit()
+        db.refresh(session)
+    except Exception as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to create chat session"
+        ) from error
+
+    return {
+        "id": session.id,
+        "title": session.title,
+        "created_at": session.created_at,
+        "updated_at": session.updated_at
+    }
+
+
+@app.get("/api/chat/sessions")
+def list_chat_sessions(db: Session = Depends(get_db)):
+    """Return conversation sessions, newest activity first."""
+    sessions = (
+        db.query(models.ChatSession)
+        .order_by(models.ChatSession.updated_at.desc())
+        .all()
+    )
+
+    return [
+        {
+            "id": session.id,
+            "title": session.title,
+            "created_at": session.created_at,
+            "updated_at": session.updated_at
+        }
+        for session in sessions
+    ]
+
+
+@app.get("/api/chat/sessions/{session_id}/messages")
+def get_chat_messages(
+    session_id: int,
+    db: Session = Depends(get_db)
+):
+    """Return all messages belonging to one conversation."""
+    session = db.get(models.ChatSession, session_id)
+
+    if session is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Chat session not found"
+        )
+
+    messages = (
+        db.query(models.ChatMessage)
+        .filter(models.ChatMessage.session_id == session_id)
+        .order_by(models.ChatMessage.id.asc())
+        .all()
+    )
+
+    return [
+        {
+            "id": message.id,
+            "session_id": message.session_id,
+            "role": message.role,
+            "content": message.content,
+            "created_at": message.created_at
+        }
+        for message in messages
+    ]
+
+
+@app.post("/api/chat")
+def chat_with_memory(
+    request: ChatRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Answer a question using retrieved document chunks and the
+    latest five conversation turns (up to ten messages).
+    """
+    question = request.question.strip()
+
+    if not question:
+        raise HTTPException(
+            status_code=400,
+            detail="Question cannot be empty"
+        )
+
+    session = db.get(models.ChatSession, request.session_id)
+
+    if session is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Chat session not found. Create a session first."
+        )
+
+    # Fetch the latest 10 messages, then restore chronological order.
+    recent_messages = (
+        db.query(models.ChatMessage)
+        .filter(models.ChatMessage.session_id == session.id)
+        .order_by(models.ChatMessage.id.desc())
+        .limit(10)
+        .all()
+    )
+    recent_messages.reverse()
+
+    history = [
+        {"role": message.role, "content": message.content}
+        for message in recent_messages
+    ]
+
+    # Retrieve relevant chunks from pgvector.
+    try:
+        query_embedding = generate_embedding(question)
+    except Exception as error:
+        raise HTTPException(
+            status_code=502,
+            detail="Unable to generate question embedding. Check Amazon Bedrock access."
+        ) from error
+
+    distance = models.DocumentChunk.embedding.cosine_distance(
+        query_embedding
+    )
+
+    try:
+        results = (
+            db.query(
+                models.DocumentChunk,
+                models.Document.filename,
+                distance.label("distance")
+            )
+            .join(
+                models.Document,
+                models.Document.id == models.DocumentChunk.document_id
+            )
+            .order_by(distance.asc())
+            .limit(3)
+            .all()
+        )
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to retrieve document context"
+        ) from error
+
+    if not results:
+        raise HTTPException(
+            status_code=404,
+            detail="No processed document chunks found. Upload and process a document first."
+        )
+
+    retrieved_chunks = [
+        {
+            "filename": filename,
+            "document_id": chunk.document_id,
+            "chunk_number": chunk.chunk_number,
+            "content": chunk.content,
+            "cosine_distance": round(float(cosine_distance), 4)
+        }
+        for chunk, filename, cosine_distance in results
+    ]
+
+    # Generate the answer using the current question, retrieved context,
+    # and prior conversation messages.
+    try:
+        answer = generate_rag_answer(
+            question,
+            retrieved_chunks,
+            history=history
+        )
+    except Exception as error:
+        raise HTTPException(
+            status_code=502,
+            detail="Unable to generate answer using Amazon Bedrock. Check model access and IAM permissions."
+        ) from error
+
+    # Save both messages only after answer generation succeeds.
+    try:
+        user_message = models.ChatMessage(
+            session_id=session.id,
+            role="user",
+            content=question
+        )
+        assistant_message = models.ChatMessage(
+            session_id=session.id,
+            role="assistant",
+            content=answer
+        )
+
+        db.add_all([user_message, assistant_message])
+
+        if session.title == "New Conversation":
+            session.title = question[:100]
+
+        db.commit()
+        db.refresh(user_message)
+        db.refresh(assistant_message)
+
+    except Exception as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="The answer was generated, but the chat messages could not be saved."
+        ) from error
+
+    return {
+        "status": "success",
+        "session_id": session.id,
+        "question": question,
+        "answer": answer,
+        "total_sources": len(retrieved_chunks),
+        "sources": [
+            {
+                "document_id": chunk["document_id"],
+                "filename": chunk["filename"],
+                "chunk_number": chunk["chunk_number"],
+                "cosine_distance": chunk["cosine_distance"]
+            }
+            for chunk in retrieved_chunks
+        ],
+        "messages": [
+            {
+                "id": user_message.id,
+                "role": user_message.role,
+                "content": user_message.content
+            },
+            {
+                "id": assistant_message.id,
+                "role": assistant_message.role,
+                "content": assistant_message.content
+            }
         ]
     }
