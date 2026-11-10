@@ -498,3 +498,34 @@ cd frontend
 npm run dev
 
 http://localhost:5173
+
+
+
+
+Lesson - 8
+
+backend/requirements.txt
+langgraph (add this library)
+
+> cd backend
+> source venv/bin/activate
+> python -m pip install -r requirements.txt
+
+backend/app/agent_graph.py
+backend/app/main.py
+
+.env
+RAG_TOP_K=3
+RAG_MAX_COSINE_DISTANCE=0.65
+
+questions:
+**********
+What is Python?
+Explain its main features.
+Explain the first feature with an example.
+What is Java?
+
+
+
+
+

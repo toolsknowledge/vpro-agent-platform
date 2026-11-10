@@ -28,6 +28,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from app.database import engine, Base, get_db
 from app import models
 from app.embedding_service import generate_embedding
+from app.agent_graph import run_rag_agent
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
@@ -906,69 +907,23 @@ def chat_with_memory(
         for message in recent_messages
     ]
 
-    # Retrieve relevant chunks from pgvector.
+    # Lesson 8: Run retrieval, retrieval evaluation, and answer generation
+    # through the compiled LangGraph workflow.
     try:
-        query_embedding = generate_embedding(question)
+        graph_result = run_rag_agent(
+            question=question,
+            history=history,
+            db=db
+        )
+        answer = graph_result["answer"]
+        retrieved_chunks = graph_result["retrieved_chunks"]
     except Exception as error:
         raise HTTPException(
             status_code=502,
-            detail="Unable to generate question embedding. Check Amazon Bedrock access."
-        ) from error
-
-    distance = models.DocumentChunk.embedding.cosine_distance(
-        query_embedding
-    )
-
-    try:
-        results = (
-            db.query(
-                models.DocumentChunk,
-                models.Document.filename,
-                distance.label("distance")
+            detail=(
+                "LangGraph RAG workflow failed. Check the backend terminal "
+                "for the detailed error and verify Bedrock/database access."
             )
-            .join(
-                models.Document,
-                models.Document.id == models.DocumentChunk.document_id
-            )
-            .order_by(distance.asc())
-            .limit(3)
-            .all()
-        )
-    except Exception as error:
-        raise HTTPException(
-            status_code=500,
-            detail="Unable to retrieve document context"
-        ) from error
-
-    if not results:
-        raise HTTPException(
-            status_code=404,
-            detail="No processed document chunks found. Upload and process a document first."
-        )
-
-    retrieved_chunks = [
-        {
-            "filename": filename,
-            "document_id": chunk.document_id,
-            "chunk_number": chunk.chunk_number,
-            "content": chunk.content,
-            "cosine_distance": round(float(cosine_distance), 4)
-        }
-        for chunk, filename, cosine_distance in results
-    ]
-
-    # Generate the answer using the current question, retrieved context,
-    # and prior conversation messages.
-    try:
-        answer = generate_rag_answer(
-            question,
-            retrieved_chunks,
-            history=history
-        )
-    except Exception as error:
-        raise HTTPException(
-            status_code=502,
-            detail="Unable to generate answer using Amazon Bedrock. Check model access and IAM permissions."
         ) from error
 
     # Save both messages only after answer generation succeeds.
@@ -1005,6 +960,8 @@ def chat_with_memory(
         "session_id": session.id,
         "question": question,
         "answer": answer,
+        "search_query": graph_result["search_query"],
+        "retrieval_status": graph_result["retrieval_status"],
         "total_sources": len(retrieved_chunks),
         "sources": [
             {
