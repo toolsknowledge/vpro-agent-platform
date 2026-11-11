@@ -16,11 +16,15 @@ def ask_mcp_agent(request: MCPAgentRequest):
     try:
         result = run_mcp_agent(request.question)
 
+        security = result.get("security", {})
+        is_blocked = security.get("status") == "blocked"
+
         return {
-            "status": "success",
+            "status": "blocked" if is_blocked else "success",
             "question": request.question,
             "answer": result["answer"],
-            "tool_calls": result["tool_calls"]
+            "tool_calls": result["tool_calls"],
+            "security": security,
         }
 
     except Exception as error:

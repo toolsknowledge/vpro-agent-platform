@@ -31,6 +31,7 @@ from app import models
 from app.embedding_service import generate_embedding
 from app.agent_graph import run_rag_agent
 from app.agentic_tools import run_tool_agent
+from app.security_service import moderation_check
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
@@ -707,7 +708,23 @@ def ask_rag_question(
             detail="Question cannot be empty"
         )
 
-    # Step 1: Generate question embedding
+    # Step 1: Security check BEFORE embeddings, database retrieval, or Bedrock.
+    security_result = moderation_check(question)
+
+    if not security_result["allowed"]:
+        return {
+            "status": "blocked",
+            "question": question,
+            "answer": "Request blocked by security checks.",
+            "security": {
+                "category": security_result.get("category"),
+                "reason": security_result["reason"],
+            },
+            "total_sources": 0,
+            "sources": [],
+        }
+
+    # Step 2: Generate question embedding only after input is approved.
     try:
         query_embedding = generate_embedding(question)
 
@@ -1030,7 +1047,11 @@ def ask_agent(request: AgentRequest, db: Session = Depends(get_db)):
             detail="Tool-calling agent failed. Check the backend terminal for the detailed error and verify Bedrock tool-use access."
         ) from error
 
-    if session is not None:
+    security = result.get("security", {})
+    is_blocked = security.get("status") == "blocked"
+
+    # Do not store blocked prompt-injection attempts in normal chat history.
+    if session is not None and not is_blocked:
         try:
             db.add_all([
                 models.ChatMessage(session_id=session.id, role="user", content=question),
@@ -1044,9 +1065,10 @@ def ask_agent(request: AgentRequest, db: Session = Depends(get_db)):
             raise HTTPException(status_code=500, detail="Agent answered, but chat history could not be saved.") from error
 
     return {
-        "status": "success",
+        "status": "blocked" if is_blocked else "success",
         "question": question,
         "answer": result["answer"],
         "tool_calls": result["tool_calls"],
         "tools_available": ["calculator", "search_knowledge_base"],
+        "security": security,
     }
