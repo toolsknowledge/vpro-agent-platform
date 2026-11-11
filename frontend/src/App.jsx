@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import "./MCPAgent.css";
 
 const API_URL = "http://localhost:8000";
 
@@ -22,6 +23,12 @@ function App() {
   const [chatQuestion, setChatQuestion] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [creatingSession, setCreatingSession] = useState(false);
+
+  // Lesson 10: MCP-powered Agent state
+  const [mcpQuestion, setMcpQuestion] = useState("");
+  const [mcpMessages, setMcpMessages] = useState([]);
+  const [mcpLoading, setMcpLoading] = useState(false);
+  const [mcpError, setMcpError] = useState("");
 
   async function loadDocuments() {
     try {
@@ -312,6 +319,37 @@ async function sendChatMessage() {
   }
 }
 
+  async function sendMCPMessage(event) {
+    event.preventDefault();
+    const question = mcpQuestion.trim();
+    if (!question || mcpLoading) return;
+
+    setMcpQuestion("");
+    setMcpError("");
+    setMcpMessages((previous) => [...previous, { role: "user", content: question }]);
+    setMcpLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/mcp-agent/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || "MCP Agent request failed");
+
+      setMcpMessages((previous) => [...previous, {
+        role: "assistant",
+        content: data.answer || "The agent returned an empty answer.",
+        toolCalls: Array.isArray(data.tool_calls) ? data.tool_calls : []
+      }]);
+    } catch (error) {
+      setMcpError(error.message || "Unable to contact the MCP Agent.");
+    } finally {
+      setMcpLoading(false);
+    }
+  }
+
   return (
     <div className="container">
 
@@ -459,6 +497,61 @@ async function sendChatMessage() {
             ))}
           </div>
         )}
+      </section>
+
+      {/* Lesson 10: MCP-powered Agent */}
+      <section className="card mcp-agent-card">
+        <div className="mcp-agent-heading">
+          <div>
+            <h2>VPRO MCP Agent</h2>
+            <p>LangGraph + Amazon Bedrock + MCP Tools</p>
+          </div>
+          <span className="mcp-agent-status">MCP Agent</span>
+        </div>
+
+        <div className="mcp-agent-messages">
+          {mcpMessages.length === 0 && (
+            <div className="mcp-agent-welcome">
+              <h3>Ask the VPRO AI Agent</h3>
+              <p>Ask a question, perform a calculation, or search your uploaded course documents.</p>
+              <div className="mcp-agent-examples">
+                <button type="button" onClick={() => setMcpQuestion("Calculate 250 multiplied by 4 plus 150.")}>Test calculator</button>
+                <button type="button" onClick={() => setMcpQuestion("What are the main features of Python? Use my uploaded knowledge documents.")}>Search Python knowledge</button>
+              </div>
+            </div>
+          )}
+
+          {mcpMessages.map((item, index) => (
+            <div key={`mcp-${index}`} className={`mcp-agent-message ${item.role}`}>
+              <strong>{item.role === "user" ? "You" : "VPRO AI Agent"}</strong>
+              <div className="mcp-agent-message-content">{item.content}</div>
+              {item.toolCalls?.length > 0 && (
+                <div className="mcp-agent-tool-calls">
+                  <strong>Tools invoked:</strong>
+                  {item.toolCalls.map((call, callIndex) => (
+                    <span key={`${call.tool}-${callIndex}`}>{call.tool}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+          {mcpLoading && <p className="mcp-agent-loading">Agent is thinking and executing tools...</p>}
+        </div>
+
+        {mcpError && <p className="mcp-agent-error" role="alert">{mcpError}</p>}
+
+        <form className="mcp-agent-input" onSubmit={sendMCPMessage}>
+          <textarea
+            value={mcpQuestion}
+            onChange={(event) => setMcpQuestion(event.target.value)}
+            placeholder="Ask the MCP-powered agent..."
+            rows={2}
+            disabled={mcpLoading}
+          />
+          <button type="submit" disabled={mcpLoading || !mcpQuestion.trim()}>
+            {mcpLoading ? "Processing..." : "Send"}
+          </button>
+        </form>
       </section>
 
       <footer className="footer">

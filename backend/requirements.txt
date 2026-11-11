@@ -12,3 +12,4 @@ pgvector
 langchain-aws
 langgraph
 langchain-core
+mcp[cli]>=1.28,<2

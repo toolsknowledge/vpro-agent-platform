@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from io import BytesIO
 from pydantic import BaseModel, Field
 from app.rag_service import generate_rag_answer
+from app.mcp_agent_api import router as mcp_agent_router
 
 
 from fastapi import (
@@ -218,6 +219,7 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+app.include_router(mcp_agent_router)
 
 
 # --------------------------------------------------
