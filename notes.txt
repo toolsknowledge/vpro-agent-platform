@@ -678,5 +678,34 @@ Test 4 – General question
 Recommended: Complete each part before proceeding to the next. This will help identify exactly which API or component needs attention if an error occurs.
 
 
+11-Nov-2026
+***********
 
+backend
+      app
+        agent_graph.py
+        agentic_tools.py
+        database.py
+        embedding_service.py
+        main.py
+        mcp_agent_api.py
+        mcp_client.py
+        mcp_langgraph_agent.py
+        mcp_server.py
+        models.py
+        rag_service.py
+
+      .env
+
+      requirements.txt
+
+      test_bedrock.py
+      test_mcp_langgraph.py
+
+frontend
+    src
+      App.jsx
+      index.css
+      MCPAgent.jsx
+      MCPAgent.css
 
