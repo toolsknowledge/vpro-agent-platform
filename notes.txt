@@ -709,3 +709,61 @@ frontend
       MCPAgent.jsx
       MCPAgent.css
 
+
+Terminal - 1
+************
+docker compose down
+
+docker compose up -d
+
+docker ps
+
+
+Terminal - 2
+************
+cd backend
+source venv/bin/activate
+uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+
+Terminal-3
+**********
+cd backend
+source venv/bin/activate
+python -m app.mcp_server
+
+Terminal-4
+**********
+npx -y @modelcontextprotocol/inspector
+
+http://localhost:6274
+
+Top:
+    add servers
+        add manullay
+            server id : vpro-server
+            Transport : streamable-http
+            url : http://127.0.0.1:8001/mcp
+
+            connect
+
+  
+    tools
+        1) Calculator
+        2) search_knowledge_base
+
+    (250 * 4) + 150
+
+    What are the main features of Python?
+
+Terminal - 5
+
+    cd frontend
+    npm run dev
+
+
+
+
+
+  
+
+
