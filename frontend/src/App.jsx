@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react";
 import "./MCPAgent.css";
+import EvaluationDashboard from "./EvaluationDashboard";
 
 const API_URL = "http://localhost:8000";
 
@@ -644,6 +645,15 @@ async function sendChatMessage() {
 
   </div>
 
+</section>
+
+
+
+        
+
+{/* Lesson 12: RAG Evaluation Dashboard */}
+<section className="card">
+  <EvaluationDashboard />
 </section>
 
     </div>

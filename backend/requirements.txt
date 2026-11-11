@@ -18,3 +18,5 @@ langchain-openai
 datasets
 langchain-community==0.4.1
 litellm
+pytest
+httpx

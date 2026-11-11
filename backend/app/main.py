@@ -5,8 +5,8 @@ from io import BytesIO
 from pydantic import BaseModel, Field
 from app.rag_service import generate_rag_answer
 from app.mcp_agent_api import router as mcp_agent_router
-
-
+from app.evaluation_dashboard import router as evaluation_dashboard_router
+from app.prompt_manager import get_prompt_metadata
 from fastapi import (
     FastAPI,
     Depends,
@@ -221,7 +221,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 app.include_router(mcp_agent_router)
-
+app.include_router(evaluation_dashboard_router)
 
 # --------------------------------------------------
 # React CORS
@@ -799,6 +799,7 @@ def ask_rag_question(
         "question": question,
         "answer": answer,
         "total_sources": len(retrieved_chunks),
+        "prompt_version": get_prompt_metadata("rag_answer"),
         "sources": [
             {
                 "document_id": chunk["document_id"],
@@ -988,6 +989,7 @@ def chat_with_memory(
         "search_query": graph_result["search_query"],
         "retrieval_status": graph_result["retrieval_status"],
         "total_sources": len(retrieved_chunks),
+        "prompt_versions": graph_result["prompt_versions"],
         "sources": [
             {
                 "document_id": chunk["document_id"],

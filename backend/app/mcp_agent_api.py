@@ -25,6 +25,7 @@ def ask_mcp_agent(request: MCPAgentRequest):
             "answer": result["answer"],
             "tool_calls": result["tool_calls"],
             "security": security,
+            "prompt_version": result.get("prompt_version"),
         }
 
     except Exception as error:

@@ -22,8 +22,12 @@ SECRET_PATTERNS = {
         r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"
     ),
     "SECRET_ASSIGNMENT": re.compile(
-        r"""(?i)\b(api[_-]?key|secret[_-]?key|password|access[_-]?token)
-        \s*[:=]\s*['"]?([A-Za-z0-9_./+=-]{8,})"""
+        r"""
+        \b(api[_-]?key|secret[_-]?key|password|access[_-]?token)
+        \s*[:=]\s*['"]?
+        ([A-Za-z0-9_./+=-]{8,})
+        """,
+        re.IGNORECASE | re.VERBOSE
     ),
 }
 
