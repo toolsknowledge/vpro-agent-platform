@@ -62,7 +62,15 @@ def _report_summary(
             "failed_records",
             0
         ),
-        "average_ragas_scores": scores
+        "average_ragas_scores": scores,
+        "report_kind": (
+            "agent" if "pass_percentage" in data else "rag"
+        ),
+        "total_test_cases": data.get("total_test_cases"),
+        "passed_test_cases": data.get("passed_test_cases"),
+        "failed_test_cases": data.get("failed_test_cases"),
+        "pass_percentage": data.get("pass_percentage"),
+        "overall_status": data.get("overall_status"),
     }
 
 

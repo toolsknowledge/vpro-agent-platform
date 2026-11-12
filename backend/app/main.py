@@ -17,7 +17,7 @@ from fastapi import (
 
 from fastapi.middleware.cors import CORSMiddleware
 
-from sqlalchemy import text
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
@@ -481,12 +481,22 @@ def get_documents(db: Session = Depends(get_db)):
         .all()
     )
 
+    chunk_counts = dict(
+        db.query(
+            models.DocumentChunk.document_id,
+            func.count(models.DocumentChunk.id)
+        )
+        .group_by(models.DocumentChunk.document_id)
+        .all()
+    )
+
     return [
         {
             "id": doc.id,
             "filename": doc.filename,
             "characters": len(doc.content),
-            "created_at": doc.created_at
+            "created_at": doc.created_at,
+            "chunks": chunk_counts.get(doc.id, 0)
         }
         for doc in documents
     ]

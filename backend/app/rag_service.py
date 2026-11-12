@@ -119,6 +119,14 @@ def _tokens(text):
 
 def _sentences(text):
     # Join wrapped lines before splitting so a line break does not truncate lists.
+    # Short title-like lines (no end punctuation) are headings: end them with a
+    # period so they do not get glued onto the next sentence.
+    lines = [line.strip() for line in text.splitlines()]
+    text = "\n".join(
+        f"{line}." if 0 < len(line) < 60 and line[0].isupper()
+        and line[-1] not in ".!?:;,)" else line
+        for line in lines
+    )
     normalized = re.sub(r"\s+", " ", text).strip()
     return [
         part.strip()
@@ -208,8 +216,24 @@ def _select_extractive_answer(question, retrieved_chunks):
             if re.search(r"\b(is|are)\s+(a|an|the)\b", sentence.lower())
         ]
         if definitions:
-            # In this knowledge base, a concise definition is preferable.
-            return min(definitions, key=len)
+            q_terms = _tokens(question)
+
+            if not q_terms:
+                # Generic question (e.g. "What is Python?"): prefer concise.
+                return min(definitions, key=len)
+
+            def overlap(sentence):
+                # Compare singular forms so "container" matches "containers".
+                singular = lambda words: {w.rstrip("s") for w in words}
+                return len(singular(q_terms) & singular(_tokens(sentence)))
+
+            best = max(definitions, key=lambda sent: (overlap(sent), -len(sent)))
+
+            # Only trust the shortcut when the sentence really matches the
+            # question; otherwise let the grounded LLM answer.
+            if overlap(best) / len(q_terms) >= 0.5:
+                return best
+            return None
 
     if kind == "list":
         # Choose the source sentence that contains the requested enumeration.
