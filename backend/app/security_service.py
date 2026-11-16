@@ -6,7 +6,6 @@ from typing import Any
 # --------------------------------------------------
 # 1. SECRET PATTERNS
 # --------------------------------------------------
-
 SECRET_PATTERNS = {
     "AWS_ACCESS_KEY": re.compile(
         r"\bAKIA[0-9A-Z]{16}\b"
@@ -35,7 +34,6 @@ SECRET_PATTERNS = {
 # --------------------------------------------------
 # 2. PII PATTERNS
 # --------------------------------------------------
-
 PII_PATTERNS = {
     "EMAIL": re.compile(
         r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
