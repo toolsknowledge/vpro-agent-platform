@@ -1,3 +1,98 @@
+Understanding flow
+******************
+
+React --- FastAPI --- LangGraph 
+
+LangGraph
+*********
+question -- security checks
+
+receive the result
+
+LangGraph
+*********
+question :
+
+history :
+
+db :
+
+answer :
+
+retrieved :
+
+security : allowed / not allowed
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ChatWidget.jsx
+
+Step 1.
+
+<form className="cw-input" onSubmit={(e) => { e.preventDefault(); send(); }}>
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Type your question…"
+              disabled={busy}
+              aria-label="Your question"
+            />
+
+design input field to enter question
+
+const [text, setText] = useState("");
+
+what ever the question entered by us, store into "text" state
+
+
+Step 2.
+    send question to backend
+
+const data = await api("/api/chat", {
+        method: "POST",
+        body: JSON.stringify({ session_id: id, question: q }),
+      });
+
+read the question
+question = request.question.strip()
+
+
+loads the chat history
+  recent_messages = (
+        db.query(models.ChatMessage)
+        .filter(models.ChatMessage.session_id == session.id)
+        .order_by(models.ChatMessage.id.desc())
+        .limit(10)
+        .all()
+    )
+    recent_messages.reverse()
+
+    history = [
+        {"role": message.role, "content": message.content}
+        for message in recent_messages
+    ]
+
+
+
+
+
+
+
+
+
+
+
 Execution Steps
 **************
 

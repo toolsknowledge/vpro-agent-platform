@@ -951,7 +951,7 @@ def chat_with_memory(
             history=history,
             db=db
         )
-        answer = graph_result["answer"]
+        answer = graph_result["answer"]             # a : q - r - s - allowed / not allowed
         retrieved_chunks = graph_result["retrieved_chunks"]
     except Exception as error:
         raise HTTPException(

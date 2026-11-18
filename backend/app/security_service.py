@@ -151,8 +151,10 @@ def moderation_check(user_input: str) -> dict[str, Any]:
             "reason": "Question exceeds the 2000-character limit."
         }
 
-    for name, pattern in SECRET_PATTERNS.items():
+    
 
+    for name, pattern in SECRET_PATTERNS.items():
+        # validations (js)
         if pattern.search(user_input):
             return {
                 "allowed": False,
