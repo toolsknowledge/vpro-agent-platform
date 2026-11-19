@@ -1,3 +1,34 @@
+technologies:
+************
+React (Fronend)
+FastAPI (backend)
+
+vectordb (pgvector) (Postgress) (AWS Server)
+PostgreSQL (AWS Server)
+
+Titan (AWS Server)
+LLM (AWS Server)
+
+Bed Rock Services
+
+RAG (CRAG, SRAG)
+
+MCP Server
+    1) calculator
+    2) search_knowledge_base
+
+Security guardrails
+
+Harness Engineering
+
+Docker
+
+Deploy (AWS)
+
+
+
+
+
 Understanding flow
 ******************
 

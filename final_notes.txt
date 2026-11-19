@@ -1,0 +1,179 @@
+1) clone/downloaf project from below repo and extract
+
+
+2) check docker desktop installation
+
+            > docker --version
+
+3) check aws cli installation and version
+
+        > aws --version
+
+4) ChatBot (Technical Stack)
+   *************************
+        Frontend : React
+        Backend : FastAPI
+        Database : Postgress (AWS)
+        Embedding Model : Amazon Titan Text Embeddings V2 (AWS)
+        LLM : Amazon Nova 2 Lite (AWS)
+        Vector DB : pgvector (AWS)
+                Bedrock Services
+        Guardrails
+        Evaluation
+        Langgraph
+        Langchain
+        MCP Server
+        --
+        --
+        --
+
+
+5) activate bedrock servicee from aws
+    Create a dedicated IAM user
+        1) aws configure list
+        2) aws configure get region
+        3) env | grep '^AWS_'
+        4)  unset AWS_ACCESS_KEY_ID
+            unset AWS_SECRET_ACCESS_KEY
+            unset AWS_SESSION_TOKEN
+            unset AWS_SECURITY_TOKEN
+            unset AWS_PROFILE
+            unset AWS_DEFAULT_PROFILE
+        5) aws configure list
+        6) aws sts get-caller-identity (AWS CloudShell)
+                CloudShell
+                **********
+        7)aws iam create-user \
+  --user-name vpro-agentic-ai-demo \
+  --tags Key=Project,Value=VPRO-Agentic-AI
+
+
+        8) cat > bedrock-policy.json <<'EOF'
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowTitanEmbeddings",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v2:0"
+      ]
+    },
+    {
+      "Sid": "AllowNova2LiteInferenceProfile",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:us-east-1:xxxxxxxxxxxxxxx:inference-profile/us.amazon.nova-2-lite-v1:0"
+      ]
+    },
+    {
+      "Sid": "AllowNova2LiteDestinationModels",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-2-lite-v1:0",
+        "arn:aws:bedrock:us-east-2::foundation-model/amazon.nova-2-lite-v1:0",
+        "arn:aws:bedrock:us-west-2::foundation-model/amazon.nova-2-lite-v1:0"
+      ]
+    }
+  ]
+}
+EOF
+
+
+9) cat bedrock-policy.json
+
+10) python3 -m json.tool bedrock-policy.json
+
+11) aws iam put-user-policy \
+  --user-name vpro-agentic-ai-demo \
+  --policy-name VProAgenticAIBedrockInvoke \
+  --policy-document file://bedrock-policy.json
+
+12) aws iam list-user-policies \
+  --user-name vpro-agentic-ai-demo
+
+13) aws iam create-access-key \
+  --user-name vpro-agentic-ai-demo
+
+
+Mac Terminal
+************
+> aws configure --profile vpro-agentic-ai
+    Default region name [None]: us-east-1
+    Default output format [None]: json
+
+> aws sts get-caller-identity \
+  --profile vpro-agentic-ai
+
+> mkdir -p ~/vpro-aws-demo
+cd ~/vpro-aws-demo
+
+cat > titan-input.json <<'EOF'
+{
+  "inputText": "VPRO Skills is developing an Agentic AI application using RAG.",
+  "dimensions": 1024,
+  "normalize": true
+}
+EOF
+
+> aws bedrock-runtime invoke-model \
+  --region us-east-1 \
+  --profile vpro-agentic-ai \
+  --model-id amazon.titan-embed-text-v2:0 \
+  --body fileb://titan-input.json \
+  --cli-binary-format raw-in-base64-out \
+  titan-output.json
+
+> cat titan-output.json
+
+> python3 -c "import json; d=json.load(open('titan-output.json')); print('Embedding dimensions:', len(d['embedding']))"
+
+> aws bedrock-runtime converse \
+  --region us-east-1 \
+  --profile vpro-agentic-ai \
+  --model-id us.amazon.nova-2-lite-v1:0 \
+  --messages '[{"role":"user","content":[{"text":"Explain Agentic AI in simple English."}]}]' \
+  --inference-config '{"maxTokens":150}'
+
+
+----------------------------
+Terminal - 1:
+    > docker compose down
+    > docker compose up -d
+    > docker ps
+
+
+Terminal - 2
+> cd backend
+> python -m venv venv
+> source venv/bin/activate
+> python -m pip install -r requirements.txt
+
+open backend/.env file
+AWS_PROFILE=vpro-agentic-ai
+
+uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+
+Terminal-3
+> cd backend
+> source venv/bin/activate
+> python -m app.mcp_server
+
+Terminal-4
+> cd frontend
+> npm install
+> npm run dev
+
+http://localhost:5173/
+
+
+
