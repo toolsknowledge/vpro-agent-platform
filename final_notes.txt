@@ -1,3 +1,69 @@
+Step 1.
+      Execute Project 
+
+Step 2.
+      know DB Conf  (Postgress)
+
+Step 3.
+      Indexing Process
+
+Step 4.
+      Quering pgvector
+
+Step 5.
+      Langgraph Flow
+
+Step 6.
+      Security Guardrails
+
+
+
+DB Steps
+********
+1) docker compose up -d postgres
+   docker ps
+
+2) docker exec -it vpro-postgres psql -U vpro_user -d vpro_agent_db
+vpro_agent_db=#
+
+SELECT current_database();
+
+SELECT version();
+
+\dt
+
+SELECT * FROM pg_extension WHERE extname = 'vector';
+
+\q
+
+
+3) docker exec -it vpro-postgres psql -U vpro_user -d vpro_agent_db
+
+CREATE EXTENSION IF NOT EXISTS vector;
+
+SELECT extname, extversion
+FROM pg_extension
+WHERE extname = 'vector';
+
+\q
+
+
+4) docker start vpro-backend
+docker logs --tail 50 vpro-backend
+
+
+5) start uvicorn server
+      uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+
+6) docker exec -it vpro-postgres psql -U vpro_user -d vpro_agent_db -c "\dt"
+
+
+
+
+
+
+
+
 1) clone/download project from below repo and extract
 
 
