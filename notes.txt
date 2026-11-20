@@ -1,3 +1,20 @@
+1) Installation
+
+2) Enable Services (AWS)
+
+3) DataBase connections & respective tables
+
+4) Indexing
+
+5) MCP Flow
+
+6) query
+
+
+
+
+
+
 technologies:
 ************
 React (Fronend)

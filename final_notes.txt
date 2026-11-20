@@ -1,4 +1,4 @@
-1) clone/downloaf project from below repo and extract
+1) clone/download project from below repo and extract
 
 
 2) check docker desktop installation
@@ -28,7 +28,7 @@
         --
 
 
-5) activate bedrock servicee from aws
+5) activate bedrock servicee from aws (13 commands) (enable bed rock, it will add project)
     Create a dedicated IAM user
         1) aws configure list
         2) aws configure get region
